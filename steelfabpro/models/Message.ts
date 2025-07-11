@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
-    projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project", required: true },
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    content: String,
+    projectId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "Project" },
+    senderId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    senderRole: { type: String, enum: ["client", "manufacturer", "admin"], required: true },
+    text: { type: String, required: true },
   },
   { timestamps: true }
 );

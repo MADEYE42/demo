@@ -2,34 +2,46 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
-type Project = {
-  _id: string;
-  title: string;
-  description?: string;
-  fileUrl?: string;
-  status?: string;
-  createdAt?: string;
-};
-
-export default function ManufacturerProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function UnassignedProjectsPage() {
+  const [projects, setProjects] = useState([]);
+  const [error, setError] = useState('');
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchProjects = async () => {
+  const fetchUnassigned = async () => {
     try {
-      const res = await fetch('/api/projects/list', {
+      const res = await fetch('/api/projects/unassigned', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setProjects(data.projects || []);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
-    } finally {
-      setLoading(false);
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data.projects || []);
+      } else {
+        setError('Failed to fetch unassigned projects');
+      }
+    } catch (err) {
+      setError('An error occurred while fetching projects');
+    }
+  };
+
+  const acceptProject = async (projectId: string) => {
+    try {
+      const res = await fetch('/api/projects/assign', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ projectId }),
+      });
+      if (res.ok) {
+        fetchUnassigned(); // Refresh list after acceptance
+      } else {
+        setError('Failed to assign project');
+      }
+    } catch (err) {
+      setError('An error occurred while assigning the project');
     }
   };
 
@@ -43,7 +55,7 @@ export default function ManufacturerProjectsPage() {
   useEffect(() => {
     const role = localStorage.getItem('role');
     if (role !== 'manufacturer') window.location.href = '/login';
-    fetchProjects();
+    fetchUnassigned();
   }, []);
 
   return (
@@ -63,34 +75,36 @@ export default function ManufacturerProjectsPage() {
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 font-sans">
         <div className="w-full max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 space-y-8">
           <h1 className="text-3xl font-extrabold text-center text-teal-600 dark:text-teal-400">
-            🛠 My Projects
+            📋 Unassigned Projects
           </h1>
           <p className="text-center text-gray-600 dark:text-gray-300 text-sm">
-            Manage your assigned projects and communications
+            Review and accept unassigned projects
           </p>
 
-          {loading ? (
-            <p className="text-gray-600 dark:text-gray-300 text-center">Loading...</p>
-          ) : projects.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-300 text-center">No projects assigned yet.</p>
+          {error && <p className="text-red-500 dark:text-red-400 text-sm text-center">{error}</p>}
+
+          {projects.length === 0 ? (
+            <p className="text-gray-600 dark:text-gray-300 text-center">
+              No unassigned projects available.
+            </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {projects.map((project) => (
+              {projects.map((p: any) => (
                 <div
-                  key={project._id}
+                  key={p._id}
                   className="p-6 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300 shadow hover:shadow-lg"
                 >
                   <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400 mb-2">
-                    {project.title || 'Untitled Project'}
+                    {p.title || 'Untitled Project'}
                   </h2>
 
-                  {project.description && (
-                    <p className="text-gray-600 dark:text-gray-300 mb-2">{project.description}</p>
+                  {p.description && (
+                    <p className="text-gray-600 dark:text-gray-300 mb-2">{p.description}</p>
                   )}
 
-                  {project.fileUrl && (
+                  {p.fileUrl && (
                     <a
-                      href={project.fileUrl}
+                      href={p.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-teal-500 underline block mb-2"
@@ -99,27 +113,12 @@ export default function ManufacturerProjectsPage() {
                     </a>
                   )}
 
-                  <p className="text-sm mb-3">
-                    <span className="font-medium text-gray-700 dark:text-gray-200">Status:</span>{' '}
-                    <span className="uppercase text-teal-600 dark:text-teal-400 font-semibold">
-                      {project.status || 'PENDING'}
-                    </span>
-                  </p>
-
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    <Link
-                      href={`/dashboard/manufacturer/notes/${project._id}`}
-                      className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300 text-sm"
-                    >
-                      Manage Notes
-                    </Link>
-                    <Link
-                      href={`/dashboard/manufacturer/messages/${project._id}`}
-                      className="px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 dark:hover:bg-gray-500 transition-all duration-300 text-sm"
-                    >
-                      Open Chat
-                    </Link>
-                  </div>
+                  <button
+                    onClick={() => acceptProject(p._id)}
+                    className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300 mt-2"
+                  >
+                    Accept
+                  </button>
                 </div>
               ))}
             </div>

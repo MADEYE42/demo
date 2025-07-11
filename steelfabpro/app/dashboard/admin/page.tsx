@@ -3,10 +3,35 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface Project {
+  _id: string;
+  title: string;
+  description: string;
+  status: string;
+  clientId?: User;
+  manufacturerId?: User;
+}
+
+interface InventoryEntry {
+  _id: string;
+  material: string;
+  quantity: string;
+  type: string;
+  createdAt: string;
+  manufacturerId?: User;
+}
+
 export default function AdminDashboard() {
-  const [users, setUsers] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [inventory, setInventory] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [inventory, setInventory] = useState<InventoryEntry[]>([]);
   const router = useRouter();
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
@@ -59,6 +84,7 @@ export default function AdminDashboard() {
           Logout
         </button>
       </header>
+
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 font-sans">
         <div className="w-full max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 space-y-8">
           <h1 className="text-3xl font-extrabold text-center text-teal-600 dark:text-teal-400">
@@ -68,8 +94,8 @@ export default function AdminDashboard() {
             Manage users, projects, inventory logs, and analytics
           </p>
 
+          {/* Analytics Card */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Analytics Card */}
             <div
               onClick={() => router.push('/dashboard/admin/analytics')}
               className="p-6 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 cursor-pointer transition-all duration-300 shadow hover:shadow-lg"
@@ -94,7 +120,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u: any) => (
+                  {users.map((u) => (
                     <tr
                       key={u._id}
                       className="border-t border-gray-300 dark:border-gray-600 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300"
@@ -113,7 +139,7 @@ export default function AdminDashboard() {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">📁 All Projects</h2>
             <ul className="space-y-3">
-              {projects.map((p: any) => (
+              {projects.map((p) => (
                 <li
                   key={p._id}
                   className="p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300 shadow hover:shadow-lg"
@@ -123,6 +149,11 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Submitted by: {p.clientId?.name} ({p.clientId?.email}) | Status: {p.status}
                   </p>
+                  {p.manufacturerId && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Accepted by: <strong>{p.manufacturerId.name}</strong> ({p.manufacturerId.email})
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -132,7 +163,7 @@ export default function AdminDashboard() {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">📦 Inventory Logs</h2>
             <ul className="space-y-3">
-              {inventory.map((e: any) => (
+              {inventory.map((e) => (
                 <li
                   key={e._id}
                   className="p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300 shadow hover:shadow-lg"

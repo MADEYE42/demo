@@ -14,7 +14,7 @@ export default function ProjectListPage() {
       },
     })
       .then((res) => res.json())
-      .then((data) => setProjects(data.projects));
+      .then((data) => setProjects(data.projects ?? []));
   }, []);
 
   return (
@@ -43,7 +43,13 @@ export default function ProjectListPage() {
               >
                 View File
               </a>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Status: {project.status}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+  Status: {project.status}
+  {project.manufacturerId?.name && (
+    <> • Assigned to: <strong>{project.manufacturerId.name}</strong></>
+  )}
+</p>
+
             </li>
           ))}
         </ul>

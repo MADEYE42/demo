@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   await connectDB();
+
   const token = req.headers.get("authorization")?.split(" ")[1];
   const user = verifyToken(token || "");
 
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
     title,
     description,
     fileUrl,
+    manufacturerId: null,     // ✅ explicitly unassigned
+    status: "PENDING",        // ✅ default status
   });
 
   return NextResponse.json({ project }, { status: 201 });

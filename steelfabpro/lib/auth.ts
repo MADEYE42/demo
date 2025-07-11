@@ -1,15 +1,29 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_SECRET = process.env.JWT_SECRET || "defaultSecretKey"; // Safe fallback
 
-export const signToken = (payload: object) => {
+// Define expected user payload structure
+export interface AuthPayload {
+  id: string;
+  role: "client" | "manufacturer" | "admin"; // Extend as needed
+  name?: string;
+}
+
+// Sign a token with 7-day expiry
+export const signToken = (payload: AuthPayload): string => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 };
 
-export const verifyToken = (token: string) => {
+// Safely verify token and return the user payload or null
+export const verifyToken = (token: string): AuthPayload | null => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (typeof decoded === "object" && "id" in decoded && "role" in decoded) {
+      return decoded as AuthPayload;
+    }
+    return null;
   } catch (err) {
+    console.error("❌ JWT Verification Error:", err);
     return null;
   }
 };
