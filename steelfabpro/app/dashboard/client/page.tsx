@@ -73,7 +73,7 @@ export default function ClientDashboard() {
 
             {/* View Messages Card */}
             <div
-              onClick={() => router.push('/dashboard/client/projects')}
+              onClick={() => router.push('/dashboard/client/messages')}
               className="p-6 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 cursor-pointer transition-all duration-300 shadow hover:shadow-lg"
             >
               <h2 className="text-xl font-semibold mb-2 text-teal-600 dark:text-teal-400">🔔 My Messages</h2>
