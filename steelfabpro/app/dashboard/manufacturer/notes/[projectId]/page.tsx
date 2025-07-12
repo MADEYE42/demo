@@ -1,34 +1,43 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react'; // <--- Import useCallback
 import { useParams } from 'next/navigation';
+
+type Note = {
+  _id: string;
+  fileUrl: string;
+  extractedText: string;
+};
 
 export default function NotesPage() {
   const { projectId } = useParams();
-  const [notes, setNotes] = useState<any[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchNotes = async () => {
+  // --- Wrap fetchNotes in useCallback ---
+  const fetchNotes = useCallback(async () => {
     try {
       const res = await fetch(`/api/notes/project/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setNotes(data.notes || []);
-    } catch (err) {
+    } catch {
       setError('Failed to fetch notes');
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, token]); // <--- Add projectId and token to the dependency array
 
   useEffect(() => {
-    if (projectId) fetchNotes();
-  }, [projectId]);
+    if (projectId) {
+      fetchNotes();
+    }
+  }, [projectId, fetchNotes]); // 'fetchNotes' is now a stable dependency
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +60,14 @@ export default function NotesPage() {
 
       const result = await res.json();
       if (res.ok) {
-        fileInputRef.current.value = '';
+        if (fileInputRef.current) { // Added null check for safety
+          fileInputRef.current.value = '';
+        }
         fetchNotes();
       } else {
         setError(result.msg || 'Upload failed');
       }
-    } catch (err) {
+    } catch {
       setError('Upload error');
     } finally {
       setUploading(false);

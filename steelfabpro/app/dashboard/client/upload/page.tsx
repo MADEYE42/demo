@@ -31,7 +31,7 @@ export default function UploadProjectPage() {
         const data = await res.json();
         setError(data.msg || 'Project upload failed');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     }
   };

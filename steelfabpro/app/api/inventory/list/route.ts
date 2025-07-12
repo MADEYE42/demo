@@ -8,12 +8,19 @@ export async function GET(req: Request) {
   const token = req.headers.get("authorization")?.split(" ")[1];
   const user = verifyToken(token || "");
 
-  if (
-    !user ||
-    typeof user !== "object" ||
-    user === null ||
-    (user as any).role !== "manufacturer"
-  ) {
+  // Type guard for user object
+  function isManufacturerUser(obj: unknown): obj is { id: string; role: string } {
+    return (
+      obj !== null &&
+      typeof obj === "object" &&
+      "id" in obj &&
+      "role" in obj &&
+      typeof (obj as Record<string, unknown>).id === "string" &&
+      (obj as Record<string, unknown>).role === "manufacturer"
+    );
+  }
+
+  if (!isManufacturerUser(user)) {
     return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
   }
 

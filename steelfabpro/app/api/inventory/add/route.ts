@@ -15,13 +15,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ msg: "Missing token" }, { status: 401 });
     }
 
-    const user = verifyToken(token);
+    interface UserPayload {
+      id: string;
+      role: string;
+      [key: string]: unknown;
+    }
+
+    const user = verifyToken(token) as UserPayload | null;
 
     if (
       !user ||
       typeof user !== "object" ||
       !("role" in user) ||
-      (user as any).role !== "manufacturer"
+      user.role !== "manufacturer"
     ) {
       return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
     }
@@ -36,18 +42,21 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
     // Create new inventory entry
     const entry = await Inventory.create({
-      manufacturerId: (user as any).id,
+      manufacturerId: user.id,
       material,
       quantity,
       type,
     });
 
     return NextResponse.json({ entry }, { status: 201 });
-  } catch (error: any) {
-    console.error("Inventory Add Error:", error.message);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Inventory Add Error:", error.message);
+    } else {
+      console.error("Inventory Add Error:", error);
+    }
     return NextResponse.json(
       { msg: "Server error. Could not add inventory." },
       { status: 500 }

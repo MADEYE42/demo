@@ -8,10 +8,6 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
-  interface LoginForm {
-    email: string;
-    password: string;
-  }
 
   interface LoginResponse {
     token: string;
@@ -39,7 +35,7 @@ export default function LoginPage() {
       } else {
         setError(data.msg || 'Login failed');
       }
-    } catch (err) {
+    } catch  {
       setError('An error occurred. Please try again.');
     }
   };

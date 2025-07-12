@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react'; // <--- Import useCallback
 import { useRouter } from 'next/navigation';
 
 interface Entry {
@@ -19,17 +19,18 @@ export default function InventoryPage() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchEntries = async () => {
+  // --- Wrap fetchEntries in useCallback ---
+  const fetchEntries = useCallback(async () => {
     try {
       const res = await fetch('/api/inventory/list', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       setEntries(data.entries || []);
-    } catch (err) {
+    } catch {
       setError('Failed to fetch inventory entries');
     }
-  };
+  }, [token]); // <--- Add 'token' as a dependency for useCallback, as fetchEntries uses it.
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,7 +52,7 @@ export default function InventoryPage() {
       } else {
         setError('Failed to add inventory entry');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     }
   };
@@ -67,7 +68,7 @@ export default function InventoryPage() {
     const role = localStorage.getItem('role');
     if (role !== 'manufacturer') window.location.href = '/login';
     fetchEntries();
-  }, []);
+  }, [fetchEntries]); // 'fetchEntries' is now a stable dependency due to useCallback
 
   const calculateStock = () => {
     const stockMap = new Map<string, number>();
@@ -164,7 +165,7 @@ export default function InventoryPage() {
                   className="p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300 shadow hover:shadow-lg"
                 >
                   <p>
-                    <strong className="text-te DebNagari">{material}</strong>: {qty} units
+                    <strong className="text-teal-600 dark:text-teal-400">{material}</strong>: {qty} units
                   </p>
                 </div>
               ))}

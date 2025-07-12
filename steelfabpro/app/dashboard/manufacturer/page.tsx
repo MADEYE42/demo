@@ -13,7 +13,7 @@ export default function ManufacturerDashboard() {
     const username = localStorage.getItem('name');
     if (role !== 'manufacturer') router.push('/login');
     setName(username || 'Manufacturer');
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.clear();

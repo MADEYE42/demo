@@ -8,12 +8,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  interface RegisterForm {
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  }
+
 
   interface RegisterResponse {
     msg?: string;
@@ -42,7 +37,7 @@ export default function RegisterPage() {
         const data: RegisterResponse = await res.json();
         setError(data.msg || 'Registration failed');
       }
-    } catch (err) {
+    } catch  {
       setError('An error occurred. Please try again.');
     }
   };

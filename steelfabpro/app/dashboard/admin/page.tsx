@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react'; // Import useMemo
 import { useRouter } from 'next/navigation';
+import { saveAs } from 'file-saver';
 
 interface User {
   _id: string;
@@ -32,13 +33,21 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [inventory, setInventory] = useState<InventoryEntry[]>([]);
-  const router = useRouter();
+  const [userSearch, setUserSearch] = useState('');
+  const [projectSearch, setProjectSearch] = useState('');
 
+  const router = useRouter();
+  
+  // Get token outside useMemo/useCallback if it's derived from localStorage
+  // This value will only change if the localStorage item changes (which typically means logout/login)
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchData = async () => {
-    const headers = { Authorization: `Bearer ${token}` };
+  // Memoize the headers object
+  const headers = useMemo(() => {
+    return { Authorization: `Bearer ${token}` };
+  }, [token]); // Recreate headers only if 'token' changes
 
+  const fetchData = useCallback(async () => {
     try {
       const [uRes, pRes, iRes] = await Promise.all([
         fetch('/api/admin/users', { headers }),
@@ -56,12 +65,45 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Error fetching data:', err);
     }
+  }, [headers]); // 'headers' is now a stable dependency due to useMemo
+
+  const handleDeleteUser = async (id: string) => {
+    await fetch(`/api/admin/users/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    fetchData();
   };
 
+  const handleDeleteProject = async (id: string) => {
+    await fetch(`/api/admin/projects/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    fetchData();
+  };
+
+  const handleExport = useCallback(async (format: 'excel' | 'pdf') => {
+    try {
+      const res = await fetch(`/api/admin/export/${format}`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (!res.ok) throw new Error('Export failed');
+
+      const blob = await res.blob();
+      const filename = format === 'excel' ? 'dashboard_data.xlsx' : 'dashboard_report.pdf';
+
+      saveAs(blob, filename);
+    } catch (err) {
+      console.error(`Export ${format} error:`, err);
+      alert(`Failed to export ${format.toUpperCase()} document.`);
+    }
+  }, [headers]); // Also add headers to handleExport's dependency array
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('name');
+    localStorage.clear();
     router.push('/login');
   };
 
@@ -69,91 +111,120 @@ export default function AdminDashboard() {
     const role = localStorage.getItem('role');
     if (role !== 'admin') window.location.href = '/login';
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  const filteredProjects = projects.filter(
+    (p) =>
+      p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
+      p.description.toLowerCase().includes(projectSearch.toLowerCase())
+  );
 
   return (
     <>
       <header className="w-full px-6 md:px-12 py-6 flex justify-between items-center bg-white dark:bg-gray-800 shadow-lg">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
-          🏗️ SteelFabPro
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-teal-600 dark:text-teal-400">🏗️ SteelFabPro</h1>
         <button
           onClick={handleLogout}
-          className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700"
         >
           Logout
         </button>
       </header>
 
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 font-sans">
-        <div className="w-full max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 space-y-8">
-          <h1 className="text-3xl font-extrabold text-center text-teal-600 dark:text-teal-400">
-            🛠️ Admin Dashboard
-          </h1>
+        <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 space-y-10">
+          <h1 className="text-3xl font-extrabold text-center text-teal-600 dark:text-teal-400">🛠️ Admin Dashboard</h1>
           <p className="text-center text-gray-600 dark:text-gray-300 text-sm">
             Manage users, projects, inventory logs, and analytics
           </p>
 
-          {/* Analytics Card */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div
-              onClick={() => router.push('/dashboard/admin/analytics')}
-              className="p-6 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 cursor-pointer transition-all duration-300 shadow hover:shadow-lg"
+          {/* Export Buttons */}
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={() => handleExport('excel')}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
-              <h2 className="text-xl font-semibold mb-2 text-teal-600 dark:text-teal-400">📊 Analytics</h2>
-              <p className="text-gray-600 dark:text-gray-300">
-                View insights and metrics for users, projects, and inventory.
-              </p>
-            </div>
+              Export Excel
+            </button>
+            <button
+              onClick={() => handleExport('pdf')}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Export PDF
+            </button>
           </div>
 
           {/* USERS */}
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">👥 All Users</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg">
-                <thead className="bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                  <tr>
-                    <th className="p-3 text-left font-medium">Name</th>
-                    <th className="p-3 text-left font-medium">Email</th>
-                    <th className="p-3 text-left font-medium">Role</th>
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              className="w-full px-4 py-2 rounded border dark:border-gray-600 dark:bg-gray-700 mb-4"
+            />
+            <table className="w-full border text-sm rounded-lg">
+              <thead className="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                  <th className="p-2 text-left">Name</th>
+                  <th className="p-2 text-left">Email</th>
+                  <th className="p-2 text-left">Role</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u) => (
+                  <tr key={u._id} className="border-t dark:border-gray-600">
+                    <td className="p-2">{u.name}</td>
+                    <td className="p-2">{u.email}</td>
+                    <td className="p-2">{u.role}</td>
+                    <td className="p-2 text-center">
+                      <button onClick={() => alert('Edit not implemented')} className="text-blue-600 mr-2">Edit</button>
+                      <button onClick={() => handleDeleteUser(u._id)} className="text-red-600">Delete</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr
-                      key={u._id}
-                      className="border-t border-gray-300 dark:border-gray-600 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300"
-                    >
-                      <td className="p-3 text-gray-900 dark:text-gray-100">{u.name}</td>
-                      <td className="p-3 text-gray-900 dark:text-gray-100">{u.email}</td>
-                      <td className="p-3 text-gray-900 dark:text-gray-100">{u.role}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </section>
 
           {/* PROJECTS */}
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">📁 All Projects</h2>
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={projectSearch}
+              onChange={(e) => setProjectSearch(e.target.value)}
+              className="w-full px-4 py-2 rounded border dark:border-gray-600 dark:bg-gray-700 mb-4"
+            />
             <ul className="space-y-3">
-              {projects.map((p) => (
+              {filteredProjects.map((p) => (
                 <li
                   key={p._id}
-                  className="p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300 shadow hover:shadow-lg"
+                  className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700"
                 >
-                  <h3 className="text-lg font-semibold text-teal-600 dark:text-teal-400">{p.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">{p.description}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <h3 className="font-semibold text-lg text-teal-600 dark:text-teal-400">{p.title}</h3>
+                  <p>{p.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Submitted by: {p.clientId?.name} ({p.clientId?.email}) | Status: {p.status}
                   </p>
                   {p.manufacturerId && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Accepted by: <strong>{p.manufacturerId.name}</strong> ({p.manufacturerId.email})
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Accepted by: {p.manufacturerId.name} ({p.manufacturerId.email})
                     </p>
                   )}
+                  <div className="mt-2">
+                    <button onClick={() => alert('Edit not implemented')} className="text-blue-600 mr-4">Edit</button>
+                    <button onClick={() => handleDeleteProject(p._id)} className="text-red-600">Delete</button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -164,17 +235,11 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">📦 Inventory Logs</h2>
             <ul className="space-y-3">
               {inventory.map((e) => (
-                <li
-                  key={e._id}
-                  className="p-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-teal-50 dark:hover:bg-teal-900 transition-all duration-300 shadow hover:shadow-lg"
-                >
-                  <h3 className="text-lg font-semibold text-teal-600 dark:text-teal-400">{e.material}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {e.quantity} ({e.type.toUpperCase()})
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    By: {e.manufacturerId?.name} ({e.manufacturerId?.email}) at{' '}
-                    {new Date(e.createdAt).toLocaleString()}
+                <li key={e._id} className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                  <h3 className="font-semibold text-lg text-teal-600 dark:text-teal-400">{e.material}</h3>
+                  <p>{e.quantity} ({e.type.toUpperCase()})</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    By: {e.manufacturerId?.name} ({e.manufacturerId?.email}) at {new Date(e.createdAt).toLocaleString()}
                   </p>
                 </li>
               ))}

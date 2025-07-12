@@ -17,6 +17,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
   }
 
-  const projects = await Project.find({}).populate("clientId", "name email");
-  return NextResponse.json({ projects });
+  const projects = await Project.find({})
+    .populate("clientId", "name email")
+    .populate("manufacturerId", "name email"); // ✅ populate manufacturer details
+
+  return NextResponse.json({ projects }, { status: 200 });
 }

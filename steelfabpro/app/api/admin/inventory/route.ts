@@ -11,11 +11,11 @@ export async function GET(req: Request) {
 
   if (
     !user ||
-    (typeof user !== "object" || user === null || (user as any).role !== "admin")
+    (typeof user !== "object" || user === null || (user as { role?: string }).role !== "admin")
   ) {
     return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
   }
-
+  
   const entries = await Inventory.find({})
     .populate("manufacturerId", "name email")
     .sort({ createdAt: -1 });

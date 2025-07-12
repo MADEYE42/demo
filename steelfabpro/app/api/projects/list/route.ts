@@ -29,8 +29,11 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 });
 
     return NextResponse.json({ projects }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Project List Error:", error);
-    return NextResponse.json({ msg: "Server error", error: error.message }, { status: 500 });
+    const errorMessage = typeof error === "object" && error !== null && "message" in error
+      ? (error as { message: string }).message
+      : String(error);
+    return NextResponse.json({ msg: "Server error", error: errorMessage }, { status: 500 });
   }
 }

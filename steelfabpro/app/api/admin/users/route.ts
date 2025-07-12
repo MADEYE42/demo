@@ -12,7 +12,10 @@ export async function GET(req: Request) {
   if (
     !user ||
     typeof user === "string" ||
-    (user as any).role !== "admin"
+    typeof user !== "object" ||
+    user === null ||
+    !("role" in user) ||
+    (user as { role?: string }).role !== "admin"
   ) {
     return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
   }

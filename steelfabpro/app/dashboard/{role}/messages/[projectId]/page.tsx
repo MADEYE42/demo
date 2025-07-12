@@ -1,22 +1,30 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+// Removed: import Link from 'next/link'; // No longer used
 
 export default function ChatPage() {
   const { projectId } = useParams();
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<any[]>([]);
+  type Message = {
+    senderId: string;
+    senderName?: string;
+    senderRole?: string;
+    createdAt: string;
+    text: string;
+  };
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [userId, setUserId] = useState('');
   const [role, setRole] = useState('');
-  const [name, setName] = useState('');
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       const res = await fetch(`/api/messages/${projectId}`, {
         headers: {
@@ -30,10 +38,11 @@ export default function ChatPage() {
       } else {
         setError('Failed to fetch messages');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching messages:', error);
       setError('Error fetching messages');
     }
-  };
+  }, [projectId, token]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +65,7 @@ export default function ChatPage() {
         setError('Failed to send message');
       }
     } catch (err) {
+      console.error('Error sending message:', err);
       setError('Error sending message');
     }
   };
@@ -66,23 +76,23 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
-    const uid = localStorage.getItem('userId');
-    const userName = localStorage.getItem('name');
+    const storedRole = localStorage.getItem('role');
+    const storedUid = localStorage.getItem('userId');
+    // Removed: const storedUserName = localStorage.getItem('name'); // No longer used
 
-    if (!role || !uid || !token) {
+    if (!storedRole || !storedUid || !token) {
       router.push('/login');
       return;
     }
 
-    setRole(role);
-    setUserId(uid);
-    setName(userName || '');
+    setRole(storedRole);
+    setUserId(storedUid);
+
     fetchMessages();
 
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [router, token, projectId, fetchMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });

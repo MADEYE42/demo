@@ -48,10 +48,13 @@ export async function POST(req: NextRequest) {
       { msg: "Project successfully assigned", project: updatedProject },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error("❌ Error in /api/projects/assign:", error.message);
+  } catch (error: unknown) {
+    const errorMsg = (error && typeof error === "object" && "message" in error)
+      ? (error as { message: string }).message
+      : String(error);
+    console.error("❌ Error in /api/projects/assign:", errorMsg);
     return NextResponse.json(
-      { msg: "Internal server error", error: error.message },
+      { msg: "Internal server error", error: errorMsg },
       { status: 500 }
     );
   }

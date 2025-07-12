@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Upload image to Cloudinary
-    const uploaded = await new Promise<any>((resolve, reject) => {
+    const uploaded = await new Promise<unknown>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream({ resource_type: "image" }, (err, result) => {
           if (err) return reject(err);
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         .end(buffer);
     });
 
-    const fileUrl = uploaded.secure_url;
+    const fileUrl = (uploaded as { secure_url: string }).secure_url;
 
     // OCR using tesseract.js
     const ocrResult = await Tesseract.recognize(buffer, "eng");
@@ -60,8 +60,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ msg: "Note created successfully", note }, { status: 200 });
 
-  } catch (err: any) {
-    console.error("❌ OCR Upload Error:", err.message);
-    return NextResponse.json({ msg: "OCR Upload Failed", error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error("❌ OCR Upload Error:", errorMessage);
+    return NextResponse.json({ msg: "OCR Upload Failed", error: errorMessage }, { status: 500 });
   }
 }

@@ -4,12 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     await connectDB();
 
-    const { projectId } = params;
+    const { projectId } = await params;
     const notes = await Note.find({ projectId }).sort({ createdAt: -1 });
 
     return NextResponse.json({ notes }, { status: 200 });

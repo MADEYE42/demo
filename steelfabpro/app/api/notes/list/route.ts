@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     !user ||
     typeof user !== "object" ||
     !("role" in user) ||
-    (user as any).role !== "manufacturer"
+    (user as { role?: string }).role !== "manufacturer"
   ) {
     return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
   }

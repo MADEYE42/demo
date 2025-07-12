@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react'; // <--- Import useCallback
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -19,7 +19,8 @@ export default function ManufacturerProjectsPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchProjects = async () => {
+  // --- Wrap fetchProjects in useCallback ---
+  const fetchProjects = useCallback(async () => {
     try {
       const res = await fetch('/api/projects/list', {
         headers: { Authorization: `Bearer ${token}` },
@@ -31,7 +32,7 @@ export default function ManufacturerProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]); // <--- Add 'token' as a dependency
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -44,7 +45,7 @@ export default function ManufacturerProjectsPage() {
     const role = localStorage.getItem('role');
     if (role !== 'manufacturer') window.location.href = '/login';
     fetchProjects();
-  }, []);
+  }, [fetchProjects]); // 'fetchProjects' is now a stable dependency
 
   return (
     <>

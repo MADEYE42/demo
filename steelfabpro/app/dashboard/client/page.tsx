@@ -17,7 +17,7 @@ export default function ClientDashboard() {
 
     const name = localStorage.getItem('name');
     if (name) setUserName(name);
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

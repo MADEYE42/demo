@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     !user ||
     typeof user !== "object" ||
     Array.isArray(user) ||
-    (user as any).role !== "client"
+    (user as { role?: string }).role !== "client"
   ) {
     return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
   }

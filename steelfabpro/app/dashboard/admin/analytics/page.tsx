@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   BarChart, Bar, PieChart, Pie, Cell, Tooltip, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer
@@ -16,7 +16,7 @@ export default function AdminAnalytics() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
@@ -27,13 +27,22 @@ export default function AdminAnalytics() {
       ]);
 
       setSummary(s);
-      setProjectData(p.data.map((d: any) => ({ date: d._id, count: d.count })));
-      setInventoryData(i.data.map((d: any) => ({ name: d._id.toUpperCase(), value: d.total })));
+      setProjectData(
+        p.data.map((d: unknown) => {
+          const { _id, count } = d as { _id: string; count: number };
+          return { date: _id, count };
+        })
+      );
+      setInventoryData(
+        i.data.map((d: unknown) => {
+          const { _id, total } = d as { _id: string; total: number };
+          return { name: _id.toUpperCase(), value: total };
+        })
+      );
     } catch (err) {
       console.error('Error fetching data:', err);
     }
-  };
-
+  }, [token]);
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
@@ -45,7 +54,7 @@ export default function AdminAnalytics() {
     const role = localStorage.getItem('role');
     if (role !== 'admin') window.location.href = '/login';
     fetchAll();
-  }, []);
+  }, [fetchAll]);
 
   return (
     <>

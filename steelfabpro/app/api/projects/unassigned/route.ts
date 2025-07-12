@@ -30,10 +30,11 @@ export async function GET(req: NextRequest) {
     }).sort({ createdAt: -1 });
 
     return NextResponse.json({ projects }, { status: 200 });
-  } catch (error: any) {
-    console.error("🔥 Error in /api/projects/unassigned:", error.message);
+  } catch (error: unknown) {
+    const errorMsg = (error instanceof Error) ? error.message : String(error);
+    console.error("🔥 Error in /api/projects/unassigned:", errorMsg);
     return NextResponse.json(
-      { msg: "Server error", error: error.message },
+      { msg: "Server error", error: errorMsg },
       { status: 500 }
     );
   }
