@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react'; // <--- Import useCallback
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Entry {
@@ -19,7 +19,6 @@ export default function InventoryPage() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  // --- Wrap fetchEntries in useCallback ---
   const fetchEntries = useCallback(async () => {
     try {
       const res = await fetch('/api/inventory/list', {
@@ -30,7 +29,7 @@ export default function InventoryPage() {
     } catch {
       setError('Failed to fetch inventory entries');
     }
-  }, [token]); // <--- Add 'token' as a dependency for useCallback, as fetchEntries uses it.
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,11 +63,15 @@ export default function InventoryPage() {
     router.push('/login');
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   useEffect(() => {
     const role = localStorage.getItem('role');
     if (role !== 'manufacturer') window.location.href = '/login';
     fetchEntries();
-  }, [fetchEntries]); // 'fetchEntries' is now a stable dependency due to useCallback
+  }, [fetchEntries]);
 
   const calculateStock = () => {
     const stockMap = new Map<string, number>();
@@ -87,12 +90,20 @@ export default function InventoryPage() {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
           🏗️ SteelFabPro
         </h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
-        >
-          Logout
-        </button>
+        <div className="flex space-x-4">
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          >
+            Logout
+          </button>
+        </div>
       </header>
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 font-sans">
         <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 space-y-8">
@@ -103,7 +114,6 @@ export default function InventoryPage() {
             Log and monitor your material inventory
           </p>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-300 dark:border-gray-600">
             <div>
               <label htmlFor="material" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -155,7 +165,6 @@ export default function InventoryPage() {
             </button>
           </form>
 
-          {/* Stock Summary */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">📊 Current Stock Levels</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -172,7 +181,6 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* Entry Log */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-teal-600 dark:text-teal-400">📜 Inventory Log</h2>
             <ul className="space-y-3">

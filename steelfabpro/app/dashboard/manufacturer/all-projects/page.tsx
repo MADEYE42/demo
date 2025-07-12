@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react'; // Import useCallback
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Project = {
@@ -16,7 +16,6 @@ export default function UnassignedProjectsPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  // Wrap fetchUnassigned in useCallback
   const fetchUnassigned = useCallback(async () => {
     try {
       const res = await fetch('/api/projects/unassigned', {
@@ -31,7 +30,7 @@ export default function UnassignedProjectsPage() {
     } catch {
       setError('An error occurred while fetching projects');
     }
-  }, [token]); // Add 'token' to the dependency array, as fetchUnassigned uses it.
+  }, [token]);
 
   const acceptProject = async (projectId: string) => {
     try {
@@ -44,7 +43,7 @@ export default function UnassignedProjectsPage() {
         body: JSON.stringify({ projectId }),
       });
       if (res.ok) {
-        fetchUnassigned(); // Refresh list after acceptance
+        fetchUnassigned();
       } else {
         setError('Failed to assign project');
       }
@@ -60,11 +59,15 @@ export default function UnassignedProjectsPage() {
     router.push('/login');
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   useEffect(() => {
     const role = localStorage.getItem('role');
     if (role !== 'manufacturer') window.location.href = '/login';
     fetchUnassigned();
-  }, [fetchUnassigned]); // This dependency is now stable due to useCallback
+  }, [fetchUnassigned]);
 
   return (
     <>
@@ -72,12 +75,20 @@ export default function UnassignedProjectsPage() {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
           🏗️ SteelFabPro
         </h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
-        >
-          Logout
-        </button>
+        <div className="flex space-x-4">
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 font-sans">

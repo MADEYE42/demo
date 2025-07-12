@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useMemo } from 'react'; // Import useMemo
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveAs } from 'file-saver';
 
@@ -37,15 +37,12 @@ export default function AdminDashboard() {
   const [projectSearch, setProjectSearch] = useState('');
 
   const router = useRouter();
-  
-  // Get token outside useMemo/useCallback if it's derived from localStorage
-  // This value will only change if the localStorage item changes (which typically means logout/login)
+
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  // Memoize the headers object
   const headers = useMemo(() => {
     return { Authorization: `Bearer ${token}` };
-  }, [token]); // Recreate headers only if 'token' changes
+  }, [token]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -65,7 +62,7 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Error fetching data:', err);
     }
-  }, [headers]); // 'headers' is now a stable dependency due to useMemo
+  }, [headers]);
 
   const handleDeleteUser = async (id: string) => {
     await fetch(`/api/admin/users/${id}`, {
@@ -83,9 +80,9 @@ export default function AdminDashboard() {
     fetchData();
   };
 
-  const handleExport = useCallback(async (format: 'excel' | 'pdf') => {
+  const handleExport = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/export/${format}`, {
+      const res = await fetch(`/api/admin/export/excel`, {
         method: 'GET',
         headers,
       });
@@ -93,14 +90,12 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error('Export failed');
 
       const blob = await res.blob();
-      const filename = format === 'excel' ? 'dashboard_data.xlsx' : 'dashboard_report.pdf';
-
-      saveAs(blob, filename);
+      saveAs(blob, 'dashboard_data.xlsx');
     } catch (err) {
-      console.error(`Export ${format} error:`, err);
-      alert(`Failed to export ${format.toUpperCase()} document.`);
+      console.error(`Export error:`, err);
+      alert(`Failed to export Excel document.`);
     }
-  }, [headers]); // Also add headers to handleExport's dependency array
+  }, [headers]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -144,19 +139,19 @@ export default function AdminDashboard() {
             Manage users, projects, inventory logs, and analytics
           </p>
 
-          {/* Export Buttons */}
-          <div className="flex justify-end gap-4">
+          {/* Dashboard Actions */}
+          <div className="flex flex-wrap justify-end gap-4">
             <button
-              onClick={() => handleExport('excel')}
+              onClick={() => router.push('/dashboard/admin/analytics')}
+              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+            >
+              Go to Analytics
+            </button>
+            <button
+              onClick={handleExport}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
               Export Excel
-            </button>
-            <button
-              onClick={() => handleExport('pdf')}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Export PDF
             </button>
           </div>
 

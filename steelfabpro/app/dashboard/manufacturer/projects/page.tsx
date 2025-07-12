@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react'; // <--- Import useCallback
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -19,7 +19,6 @@ export default function ManufacturerProjectsPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  // --- Wrap fetchProjects in useCallback ---
   const fetchProjects = useCallback(async () => {
     try {
       const res = await fetch('/api/projects/list', {
@@ -32,7 +31,7 @@ export default function ManufacturerProjectsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]); // <--- Add 'token' as a dependency
+  }, [token]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -41,11 +40,15 @@ export default function ManufacturerProjectsPage() {
     router.push('/login');
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   useEffect(() => {
     const role = localStorage.getItem('role');
     if (role !== 'manufacturer') window.location.href = '/login';
     fetchProjects();
-  }, [fetchProjects]); // 'fetchProjects' is now a stable dependency
+  }, [fetchProjects]);
 
   return (
     <>
@@ -53,12 +56,20 @@ export default function ManufacturerProjectsPage() {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
           🏗️ SteelFabPro
         </h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
-        >
-          Logout
-        </button>
+        <div className="flex space-x-4">
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-lg bg-teal-600 text-white font-semibold hover:bg-teal-700 dark:hover:bg-teal-500 transition-all duration-300"
+          >
+            Logout
+          </button>
+ +        </div>
       </header>
 
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-6 font-sans">
