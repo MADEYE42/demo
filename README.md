@@ -1,5 +1,3 @@
-
-```markdown
 # 🏗️ SteelFabPro - Admin Dashboard
 
 SteelFabPro is a full-stack web application for managing users, projects, and inventory in the steel fabrication industry. The Admin Dashboard allows administrators to monitor activities, export data, and manage system records efficiently.
@@ -136,5 +134,3 @@ Both features are accessible via buttons on the dashboard.
 Developed by [Gouresh Madye](https://github.com/MADEYE42)
 
 ---
-
-```
